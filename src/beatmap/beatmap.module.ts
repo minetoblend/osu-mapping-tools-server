@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
-import { Beatmap } from './beatmap.entity';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { BeatmapService } from './beatmap.service';
-import { BeatmapController } from './beatmap.controller';
+import { PatternService } from './pattern.service';
+import { PatternController } from './pattern.controller';
+import { MongooseModule } from '@nestjs/mongoose';
+import { Pattern, PatternSchema } from './pattern.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Beatmap])],
-  providers: [BeatmapService],
-  controllers: [BeatmapController],
+  imports: [
+    MongooseModule.forFeature([{ name: Pattern.name, schema: PatternSchema }]),
+  ],
+  providers: [PatternService],
+  controllers: [PatternController],
 })
 export class BeatmapModule {}

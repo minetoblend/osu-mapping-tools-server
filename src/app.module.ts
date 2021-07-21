@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { BeatmapModule } from './beatmap/beatmap.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(), BeatmapModule],
+  imports: [MongooseModule.forRoot('mongodb://localhost/osu'), BeatmapModule],
   controllers: [AppController],
   providers: [AppService],
 })

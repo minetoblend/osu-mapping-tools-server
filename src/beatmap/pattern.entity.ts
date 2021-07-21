@@ -1,25 +1,57 @@
-import {
-  Column,
-  Entity,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-import { Beatmap } from './beatmap.entity';
-import { HitObject } from './hitobject.entity';
+import { Beatmap } from './beatmap';
+import { HitObject } from './hitobject';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
 
-@Entity()
+export type PatternDocument = Pattern & Document;
+
+@Schema({ collection: 'pattern' })
 export class Pattern {
-  @PrimaryGeneratedColumn()
-  id: number;
-  @Column({ type: 'integer' })
+  @Prop()
   startTime: number;
-  @Column()
-  rhythm: string;
 
-  @ManyToOne(() => Beatmap)
+  @Prop()
+  endTime: number;
+
+  @Prop()
+  duration: number;
+
+  @Prop(Beatmap)
   beatmap: Beatmap;
 
-  @OneToMany(() => HitObject, (hitObject) => hitObject.pattern)
+  @Prop([HitObject])
   hitObjects: HitObject[];
+
+  @Prop()
+  rhythm: string;
+
+  calculateRhythm(): string {
+    let rhythmString = '';
+
+    let lastHitObject: HitObject | null = null;
+    for (let i = 0; i < this.hitObjects.length; i++) {
+      const hitObject = this.hitObjects[i];
+
+      if (lastHitObject) {
+        const breakTime = Math.round(
+          (hitObject.startBeat - lastHitObject.endBeat) * 48,
+        );
+
+        rhythmString += '_' + breakTime + '_';
+      }
+
+      if (hitObject.type === 'slider') {
+        rhythmString += 'S' + Math.round(hitObject.beatDuration * 48);
+      } else if (hitObject.type === 'circle') {
+        rhythmString += 'C';
+      }
+
+      lastHitObject = hitObject;
+    }
+
+    this.rhythm = rhythmString;
+    return rhythmString;
+  }
 }
+
+export const PatternSchema = SchemaFactory.createForClass(Pattern);
