@@ -12,4 +12,16 @@ export class Beatmap {
 
   @Column()
   difficulty: string;
+
+  @Column()
+  hp: number;
+
+  @Column()
+  cs: number;
+
+  @Column()
+  ar: number;
+
+  @Column()
+  od: number;
 }

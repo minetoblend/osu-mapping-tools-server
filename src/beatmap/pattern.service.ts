@@ -16,7 +16,7 @@ export class PatternService {
   ): Promise<Pattern[]> {
     return this.patternModel
       .find({
-        rhythm: new RegExp('^' + rhythm),
+        rhythm,
       })
       .skip(offset)
       .limit(limit)

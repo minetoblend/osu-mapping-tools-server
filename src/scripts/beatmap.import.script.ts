@@ -1,28 +1,22 @@
 import * as fs from 'fs';
-import { createConnection, MongoRepository } from 'typeorm';
 
 import * as parser from 'osu-parser';
 
 import { promisify } from 'util';
 import { Beatmap } from '../beatmap/beatmap';
 import { HitObject } from '../beatmap/hitobject';
-import { Pattern } from '../beatmap/pattern.entity';
+import { Pattern, PatternSchema } from '../beatmap/pattern.entity';
 
 const parseFile = promisify(parser.parseFile);
 
-let patternRepository!: MongoRepository<Pattern>;
+import * as mongoose from 'mongoose';
+
+let patternModel!: mongoose.Model<Pattern>;
 
 async function importBeatmaps() {
-  const connection = await createConnection({
-    type: 'mongodb',
-    host: 'localhost',
-    port: 27017,
-    database: 'osu',
-    synchronize: true,
-    entities: [Pattern],
-  });
+  await mongoose.connect('mongodb://localhost/osu');
 
-  patternRepository = connection.getMongoRepository(Pattern);
+  patternModel = mongoose.model(Pattern.name, PatternSchema);
 
   if (!fs.existsSync('beatmaps')) {
     console.error(
@@ -129,7 +123,7 @@ function createPattern(combo: any[], parsedBeatmap): Pattern | null {
       ) / 48;
 
     hitObject.x = parsedHitObject.position[0];
-    hitObject.y = parsedHitObject.position[0];
+    hitObject.y = parsedHitObject.position[1];
     hitObject.type = parsedHitObject.objectName;
 
     hitObject.startTime = parsedHitObject.startTime - combo[0].startTime;
@@ -154,6 +148,7 @@ function createPattern(combo: any[], parsedBeatmap): Pattern | null {
   pattern.startTime = combo[0].startTime;
   pattern.duration = pattern.hitObjects[pattern.hitObjects.length - 1].endTime;
   pattern.endTime = pattern.startTime + pattern.duration;
+  pattern.bpm = timingPoint.bpm;
 
   pattern.calculateRhythm();
 
@@ -162,6 +157,10 @@ function createPattern(combo: any[], parsedBeatmap): Pattern | null {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 async function importBeatmap(parsedBeatmap) {
+  if (parsedBeatmap.Mode !== '0')
+    //not an osu std map
+    return;
+
   const beatmap = new Beatmap();
 
   beatmap.title = parsedBeatmap.Title;
@@ -169,13 +168,16 @@ async function importBeatmap(parsedBeatmap) {
   beatmap.creator = parsedBeatmap.Creator;
   beatmap.difficulty = parsedBeatmap.Version;
 
-  //await beatmapRepository.insert(beatmap);
+  beatmap.hp = parseFloat(parsedBeatmap.HPDrainRate);
+  beatmap.cs = parseFloat(parsedBeatmap.CircleSize);
+  beatmap.ar = parseFloat(parsedBeatmap.ApproachRate);
+  beatmap.od = parseFloat(parsedBeatmap.OverallDifficulty);
 
   let patterns = createCombos(parsedBeatmap.hitObjects).map((combo) => {
     const pattern = createPattern(combo, parsedBeatmap);
 
     if (pattern) {
-      //pattern.beatmap = beatmap;
+      pattern.beatmap = beatmap;
       return pattern;
     }
     return null;
@@ -183,7 +185,7 @@ async function importBeatmap(parsedBeatmap) {
 
   patterns = patterns.filter((it) => it !== null);
 
-  if (patterns.length > 0) await patternRepository.insertMany(patterns);
+  if (patterns.length > 0) await patternModel.insertMany(patterns);
   else console.error('no patterns found for map ' + beatmap.title);
 }
 

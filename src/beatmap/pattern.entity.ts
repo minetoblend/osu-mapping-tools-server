@@ -25,6 +25,9 @@ export class Pattern {
   @Prop()
   rhythm: string;
 
+  @Prop()
+  bpm: number;
+
   calculateRhythm(): string {
     let rhythmString = '';
 
@@ -42,6 +45,9 @@ export class Pattern {
 
       if (hitObject.type === 'slider') {
         rhythmString += 'S' + Math.round(hitObject.beatDuration * 48);
+        if (hitObject.repeatCount > 0) {
+          rhythmString += `:${hitObject.repeatCount}`;
+        }
       } else if (hitObject.type === 'circle') {
         rhythmString += 'C';
       }
