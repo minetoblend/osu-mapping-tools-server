@@ -13,10 +13,12 @@ export class PatternService {
     rhythm: string,
     limit: number,
     offset: number,
+    options: { [key: string]: any } = {},
   ): Promise<Pattern[]> {
     return this.patternModel
       .find({
         rhythm,
+        ...options,
       })
       .skip(offset)
       .limit(limit)
