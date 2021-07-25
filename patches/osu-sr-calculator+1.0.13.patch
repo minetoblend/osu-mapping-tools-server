@@ -1,0 +1,24 @@
+diff --git a/node_modules/osu-sr-calculator/dist/osu-service.js b/node_modules/osu-sr-calculator/dist/osu-service.js
+index a8da2b3..5c6e256 100644
+--- a/node_modules/osu-sr-calculator/dist/osu-service.js
++++ b/node_modules/osu-sr-calculator/dist/osu-service.js
+@@ -1,8 +1,19 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+ const request = require("request");
++const fs = require('fs')
++
+ class OsuService {
+     getOsuBeatmap(map_id) {
++        if(typeof map_id === "string") {
++            return new Promise(((resolve, reject) => {
++                fs.readFile(map_id, (err, data) => {
++                    if(err) reject(err)
++                    else resolve(data.toString())
++                })
++            }))
++        }
++
+         return new Promise((resolve, reject) => {
+             const url = "https://osu.ppy.sh/osu/" + map_id;
+             request(url, (error, response, body) => {

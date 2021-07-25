@@ -10,6 +10,7 @@ import { Pattern, PatternSchema } from '../beatmap/pattern.entity';
 const parseFile = promisify(parser.parseFile);
 
 import * as mongoose from 'mongoose';
+import { calculateStarRating } from "osu-sr-calculator";
 
 let patternModel!: mongoose.Model<Pattern>;
 
@@ -193,6 +194,15 @@ async function importBeatmap(parsedBeatmap, filename: string) {
   beatmap.cs = parseFloat(parsedBeatmap.CircleSize);
   beatmap.ar = parseFloat(parsedBeatmap.ApproachRate);
   beatmap.od = parseFloat(parsedBeatmap.OverallDifficulty);
+
+
+  try {
+    // @ts-ignore
+    const { nomod } = await calculateStarRating('beatmaps/' + filename)
+    beatmap.starRating = nomod
+  } catch (e) {
+    console.error(`Couldn't calculate star rating for ${beatmap.title} [${beatmap.difficulty}]`)
+  }
 
   beatmap.stackLeniency = parseFloat(parsedBeatmap.StackLeniency)
 

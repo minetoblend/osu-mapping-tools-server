@@ -31,7 +31,19 @@ export class PatternController {
         options.bpm = {}
       options.bpm.$lte = parseInt(query.maxbpm)
     }
+    if(query.c === 'true') {
+      rhythm = new RegExp('^' + rhythm)
+    }
 
-    return await this.patternService.search(rhythm, limit, offset, options);
+    if (query.minsr) {
+      options['beatmap.starRating'] = { $gte: parseFloat(query.minsr) };
+    }
+    if (query.maxsr) {
+      if (!options['beatmap.starRating'])
+        options['beatmap.starRating'] = {}
+      options['beatmap.starRating'].$lte = parseFloat(query.maxsr)
+    }
+
+    return await this.patternService.search(rhythm, limit, offset, options)
   }
 }

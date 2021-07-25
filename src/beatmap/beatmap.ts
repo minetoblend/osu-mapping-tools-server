@@ -1,4 +1,5 @@
 import { Column } from 'typeorm';
+import { Prop } from "@nestjs/mongoose";
 
 export class Beatmap {
   @Column()
@@ -30,4 +31,7 @@ export class Beatmap {
 
   @Column()
   stackLeniency: number;
+
+  @Prop()
+  starRating: number;
 }
