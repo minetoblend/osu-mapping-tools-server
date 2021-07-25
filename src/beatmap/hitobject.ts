@@ -28,4 +28,6 @@ export class HitObject {
   pixelLength?: number;
   @Column({ type: 'integer', nullable: true })
   repeatCount?: number;
+  
+  endPosition?: { x: number; y: number };
 }

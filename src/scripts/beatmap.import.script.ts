@@ -25,26 +25,40 @@ async function importBeatmaps() {
     return;
   }
   fs.readdir('beatmaps', async (err, files) => {
-    for (let i = 0; i < files.length; i++) {
-      if (files[i].startsWith('imported_')) {
-        await promisify(fs.rename)(
-          `beatmaps/${files[i]}`,
-          `beatmaps/${files[i].substr(9)}`,
-        );
-        files[i] = files[i].substr(9);
-      }
 
-      console.log(`Processing beatmap: ${files[i]}`);
+    const N = 5;
 
-      try {
-        const parsedBeatmap = await parseFile(`beatmaps/${files[i]}`);
-        console.log(
-          `${parsedBeatmap.Title}[${parsedBeatmap.Version}] by ${parsedBeatmap.Creator}`,
-        );
-        importBeatmap(parsedBeatmap).then();
-      } catch (e) {
-        console.error(e);
-      }
+    for (let k = 0; k < files.length; k+=N) {
+
+      await Promise.all([...new Array(N).keys()].map(async (_, j) => {
+        const i = k + j;
+
+        if(!files[i])
+          return;
+
+        if (files[i].startsWith('imported_')) {
+          await promisify(fs.rename)(
+            `beatmaps/${files[i]}`,
+            `beatmaps/${files[i].substr(9)}`,
+          );
+          files[i] = files[i].substr(9);
+        }
+
+        console.log(`Processing beatmap: ${files[i]}`);
+
+        try {
+          const parsedBeatmap = await parseFile(`beatmaps/${files[i]}`);
+          console.log(
+            `${parsedBeatmap.Title}[${parsedBeatmap.Version}] by ${parsedBeatmap.Creator}`,
+          );
+          importBeatmap(parsedBeatmap, files[i]).then();
+        } catch (e) {
+          console.error(e);
+        }
+
+      }))
+
+
     }
   });
 }
@@ -115,12 +129,14 @@ function createPattern(combo: any[], parsedBeatmap): Pattern | null {
     const patternOffset = parsedHitObject.startTime - combo[0].startTime;
     const startBeat =
       Math.round((patternOffset / timingPoint.beatLength) * 48) / 48;
-    const endBeat =
+    const durationBeat =
       Math.round(
-        ((patternOffset + (parsedHitObject.duration || 0)) /
+        (((parsedHitObject.duration || 0)) /
           timingPoint.beatLength) *
           48,
       ) / 48;
+
+
 
     hitObject.x = parsedHitObject.position[0];
     hitObject.y = parsedHitObject.position[1];
@@ -131,15 +147,19 @@ function createPattern(combo: any[], parsedBeatmap): Pattern | null {
       (parsedHitObject.endTime || parsedHitObject.startTime) -
       combo[0].startTime;
     hitObject.startBeat = startBeat;
-    hitObject.endBeat = endBeat;
+    hitObject.endBeat = startBeat + durationBeat;
     hitObject.duration = parsedHitObject.duration || 0;
-    hitObject.beatDuration = endBeat - startBeat;
+    hitObject.beatDuration = durationBeat;
 
     if (parsedHitObject.objectName === 'slider') {
       hitObject.points = parsedHitObject.points;
       hitObject.curveType = parsedHitObject.curveType;
       hitObject.pixelLength = parsedHitObject.pixelLength;
       hitObject.repeatCount = parsedHitObject.repeatCount;
+      hitObject.endPosition = {
+        x: parsedHitObject.endPosition[0] as number,
+        y: parsedHitObject.endPosition[1] as number
+      };
     }
 
     return hitObject;
@@ -149,14 +169,14 @@ function createPattern(combo: any[], parsedBeatmap): Pattern | null {
   pattern.duration = pattern.hitObjects[pattern.hitObjects.length - 1].endTime;
   pattern.endTime = pattern.startTime + pattern.duration;
   pattern.bpm = timingPoint.bpm;
-
+  pattern.random = Math.floor(Math.random() * 1000_000)
   pattern.calculateRhythm();
 
   return pattern;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
-async function importBeatmap(parsedBeatmap) {
+async function importBeatmap(parsedBeatmap, filename: string) {
   if (parsedBeatmap.Mode !== '0')
     //not an osu std map
     return;
@@ -167,11 +187,14 @@ async function importBeatmap(parsedBeatmap) {
   beatmap.artist = parsedBeatmap.Artist;
   beatmap.creator = parsedBeatmap.Creator;
   beatmap.difficulty = parsedBeatmap.Version;
+  beatmap.filename = filename;
 
   beatmap.hp = parseFloat(parsedBeatmap.HPDrainRate);
   beatmap.cs = parseFloat(parsedBeatmap.CircleSize);
   beatmap.ar = parseFloat(parsedBeatmap.ApproachRate);
   beatmap.od = parseFloat(parsedBeatmap.OverallDifficulty);
+
+  beatmap.stackLeniency = parseFloat(parsedBeatmap.StackLeniency)
 
   let patterns = createCombos(parsedBeatmap.hitObjects).map((combo) => {
     const pattern = createPattern(combo, parsedBeatmap);
@@ -185,7 +208,7 @@ async function importBeatmap(parsedBeatmap) {
 
   patterns = patterns.filter((it) => it !== null);
 
-  if (patterns.length > 0) await patternModel.insertMany(patterns);
+    if (patterns.length > 0) await patternModel.insertMany(patterns);
   else console.error('no patterns found for map ' + beatmap.title);
 }
 

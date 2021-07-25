@@ -14,6 +14,9 @@ export class Beatmap {
   difficulty: string;
 
   @Column()
+  filename: string;
+
+  @Column()
   hp: number;
 
   @Column()
@@ -24,4 +27,7 @@ export class Beatmap {
 
   @Column()
   od: number;
+
+  @Column()
+  stackLeniency: number;
 }

@@ -26,6 +26,9 @@ export class Pattern {
   rhythm: string;
 
   @Prop()
+  random: number;
+
+  @Prop()
   bpm: number;
 
   calculateRhythm(): string {
