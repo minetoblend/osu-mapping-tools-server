@@ -20,6 +20,7 @@ export class PatternService {
         rhythm,
         ...options,
       })
+      .collation({locale: 'en', strength: 1})
       .skip(offset)
       .limit(limit)
       .sort({

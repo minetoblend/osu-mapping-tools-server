@@ -44,6 +44,10 @@ export class PatternController {
       options['beatmap.starRating'].$lte = parseFloat(query.maxsr)
     }
 
+    if(query.creator) {
+      options['beatmap.creator'] = query.creator
+    }
+
     return await this.patternService.search(rhythm, limit, offset, options)
   }
 }
