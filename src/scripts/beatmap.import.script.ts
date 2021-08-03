@@ -57,8 +57,9 @@ async function importBeatmaps() {
           console.log(
             `${parsedBeatmap.Title}[${parsedBeatmap.Version}] by ${parsedBeatmap.Creator}`,
           );
-          fs.rename(`beatmaps/${files[i]}`, `beatmaps/imported/${files[i]}`, ()=>{})
-          importBeatmap(parsedBeatmap, files[i]).then();
+          importBeatmap(parsedBeatmap, files[i]).then(()=>{
+            fs.rename(`beatmaps/${files[i]}`, `beatmaps/imported/${files[i]}`, ()=>{})
+          });
 
         } catch (e) {
           console.error(e);
