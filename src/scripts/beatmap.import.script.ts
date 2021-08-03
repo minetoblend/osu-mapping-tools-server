@@ -25,6 +25,11 @@ async function importBeatmaps() {
     );
     return;
   }
+
+  if(!fs.existsSync(`beatmaps/imported/`)) {
+    fs.mkdirSync(`beatmaps/imported`)
+  }
+
   fs.readdir('beatmaps', async (err, files) => {
 
     const N = 5;
@@ -52,7 +57,9 @@ async function importBeatmaps() {
           console.log(
             `${parsedBeatmap.Title}[${parsedBeatmap.Version}] by ${parsedBeatmap.Creator}`,
           );
+          fs.rename(`beatmaps/${files[i]}`, `beatmaps/imported/${files[i]}`, ()=>{})
           importBeatmap(parsedBeatmap, files[i]).then();
+
         } catch (e) {
           console.error(e);
         }
